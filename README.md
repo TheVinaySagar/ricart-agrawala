@@ -36,44 +36,73 @@ This implementation provides a distributed mutual exclusion algorithm where mult
 
 ### Multiple Machines (Network)
 
+In network mode, each process runs **one node**, and all nodes connect to a **single RMI registry** on Machine 1.
+
 #### Machine 1 (Registry + Node 0):
 ```bash
 # Terminal 1 - Start RMI Registry
 ./start_registry.sh
 
-# Terminal 2 - Start Node 0
+# Terminal 2 - Start Node 0 (node ID = 0)
 ./start_node.sh <MACHINE1_IP> 0
-# Enter: 3
+# When prompted: Enter node ID (0-9): 0
 ```
 
 #### Machine 2 (Node 1):
 ```bash
 ./start_node.sh <MACHINE1_IP> 1
-# Enter: 3
+# When prompted: Enter node ID (0-9): 1
 ```
 
 #### Machine 3 (Node 2):
 ```bash
 ./start_node.sh <MACHINE1_IP> 2
-# Enter: 3
+# When prompted: Enter node ID (0-9): 2
 ```
+
+**Notes:**
+- Replace `<MACHINE1_IP>` with the actual IP address of Machine 1 (the one running `start_registry.sh`), e.g. `192.168.137.37`.
+- Each machine must use a **unique node ID** (0–9). The ID you type at the prompt must match the second argument to `start_node.sh`.
 
 ### Simulating Multi-Machine on Same Machine
 
+**Important:** Do NOT run `rmiregistry &` manually. The first node will automatically create the registry.
+
+**Option 1: Using localhost (simplest for same-machine testing)**
 ```bash
-# Terminal 1 (Registry + Node 0):
-rmiregistry &
-java -Djava.rmi.server.hostname=192.168.31.13 -Dregistry.host=192.168.31.13 RicartAgrawalaApp multi
+# Terminal 1 (Node 0 - creates registry automatically):
+java -Djava.rmi.server.hostname=localhost -Dregistry.host=localhost RicartAgrawalaApp multi
 # Enter: 0
 
-# Terminal 2 (Node 1):
-java -Djava.rmi.server.hostname=192.168.31.13 -Dregistry.host=192.168.31.13 RicartAgrawalaApp multi
+# Terminal 2 (Node 1 - connects to existing registry):
+java -Djava.rmi.server.hostname=localhost -Dregistry.host=localhost RicartAgrawalaApp multi
 # Enter: 1
 
-# Terminal 3 (Node 2):
-java -Djava.rmi.server.hostname=192.168.31.13 -Dregistry.host=192.168.31.13 RicartAgrawalaApp multi
+# Terminal 3 (Node 2 - connects to existing registry):
+java -Djava.rmi.server.hostname=localhost -Dregistry.host=localhost RicartAgrawalaApp multi
 # Enter: 2
 ```
+
+**Option 2: Using network IP (for actual network testing)**
+```bash
+# First, find your machine's IP address:
+ipconfig getifaddr en0  # macOS
+# or: hostname -I        # Linux
+
+# Terminal 1 (Node 0 - creates registry automatically):
+java -Djava.rmi.server.hostname=YOUR_IP -Dregistry.host=YOUR_IP RicartAgrawalaApp multi
+# Enter: 0
+
+# Terminal 2 (Node 1 - connects to existing registry):
+java -Djava.rmi.server.hostname=YOUR_IP -Dregistry.host=YOUR_IP RicartAgrawalaApp multi
+# Enter: 1
+
+# Terminal 3 (Node 2 - connects to existing registry):
+java -Djava.rmi.server.hostname=YOUR_IP -Dregistry.host=YOUR_IP RicartAgrawalaApp multi
+# Enter: 2
+```
+
+**Note:** Replace `YOUR_IP` with your actual IP address (e.g., `192.168.137.37`). Using the wrong IP will cause connection failures.
 
 ### Manual Execution
 

@@ -100,20 +100,28 @@ public class NodeImpl implements Node {
         return true;
     }
     
-    // Grant permission if node is not requesting/held, or requester has higher priority
+    // Grant permission based on Ricart-Agrawala algorithm:
+    // 1. Grant if not requesting/held (idle state)
+    // 2. Grant if requester has earlier timestamp (higher priority)
+    // 3. Grant if same timestamp AND requester has lower ID (tie-breaker)
     private boolean shouldGrantPermission(int requesterId, long timestamp) {
+        // If not requesting or in critical section, always grant
         if (state != State.REQUESTING && state != State.HELD) {
             return true;
         }
         
+        // Grant if requester has earlier timestamp (higher priority)
         if (timestamp < requestTimestamp) {
             return true;
         }
         
+        // Grant if same timestamp AND requester has lower ID (tie-breaker rule)
+        // This ensures fairness: when timestamps are equal, lower ID wins
         if (timestamp == requestTimestamp && requesterId < nodeId) {
             return true;
         }
         
+        // Otherwise, defer the reply (will send later when exiting critical section)
         return false;
     }
     

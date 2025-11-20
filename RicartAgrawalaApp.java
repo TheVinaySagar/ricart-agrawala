@@ -19,11 +19,23 @@ public class RicartAgrawalaApp {
         try {
             registry = LocateRegistry.getRegistry(Config.RMI_REGISTRY_HOST, Config.RMI_REGISTRY_PORT);
             registry.list();
-            Logger.info("Connected to existing RMI registry");
+            Logger.info("Connected to existing RMI registry at " + Config.RMI_REGISTRY_HOST + ":" + Config.RMI_REGISTRY_PORT);
         } catch (Exception e) {
+            Logger.info("Could not connect to existing RMI registry at " + Config.RMI_REGISTRY_HOST + ":" + Config.RMI_REGISTRY_PORT);
             Logger.info("Creating new RMI registry...");
-            registry = LocateRegistry.createRegistry(Config.RMI_REGISTRY_PORT);
-            Logger.info("RMI registry created on port " + Config.RMI_REGISTRY_PORT);
+            try {
+                registry = LocateRegistry.createRegistry(Config.RMI_REGISTRY_PORT);
+                Logger.info("RMI registry created on port " + Config.RMI_REGISTRY_PORT);
+            } catch (java.rmi.server.ExportException ex) {
+                if (ex.getMessage() != null && ex.getMessage().contains("Port already in use")) {
+                    Logger.error("Port " + Config.RMI_REGISTRY_PORT + " is already in use. " +
+                               "Please stop any existing rmiregistry process or use a different port.");
+                    Logger.error("To stop existing registry: kill $(lsof -t -i:" + Config.RMI_REGISTRY_PORT + ")");
+                    throw new Exception("Port " + Config.RMI_REGISTRY_PORT + " is already in use. " +
+                                      "Another rmiregistry may be running. Please stop it first.", ex);
+                }
+                throw ex;
+            }
         }
     }
     
