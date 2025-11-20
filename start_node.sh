@@ -10,7 +10,18 @@ fi
 REGISTRY_IP=$1
 NODE_ID=${2:-0}
 
-echo "Starting Node on $(hostname -I | awk '{print $1}')"
+# Get local IP address (handle missing hostname command)
+if command -v hostname &> /dev/null; then
+    LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+else
+    LOCAL_IP=$(ip route get 1 2>/dev/null | awk '{print $7; exit}')
+fi
+
+if [ -z "$LOCAL_IP" ]; then
+    LOCAL_IP="localhost"
+fi
+
+echo "Starting Node on $LOCAL_IP"
 echo "Connecting to registry at: $REGISTRY_IP:1099"
 echo "Node ID: $NODE_ID"
 echo ""
@@ -24,7 +35,7 @@ fi
 echo "Starting Ricart-Agrawala Node in multi-machine mode..."
 echo ""
 
-java -Djava.rmi.server.hostname=$(hostname -I | awk '{print $1}') \
+java -Djava.rmi.server.hostname=$LOCAL_IP \
      -Dregistry.host=$REGISTRY_IP \
      -Dregistry.port=1099 \
      RicartAgrawalaApp multi
